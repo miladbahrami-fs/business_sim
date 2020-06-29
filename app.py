@@ -7,6 +7,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output,State
 import plotly.figure_factory as ff
+from plotly.subplots import make_subplots
 
 # 1) Define functions
 # assuming conversion rate and clv follows normal distribution
@@ -48,11 +49,23 @@ app.layout = html.Div([
         dcc.Input(id='clv-inp',type='number',value=58,placeholder='Expected CLV'),
         html.Button(id='submit-button-state', n_clicks=0, children='Simulate')]),
 
-    html.Div(id='output-state',children=[dcc.Graph(id='graph-normal')])
+    html.Div(id='output-state',
+    children=[
+    dcc.Graph(id='clv'),
+    dcc.Graph(id='cpa'),
+    dcc.Graph(id='clv-cpa'),
+    dcc.Graph(id='new-customer'),
+    dcc.Graph(id='campaign-ltv'),
+    dcc.Graph(id='campaign-return')])
     ])
 
 @app.callback(
-    Output('graph-normal', 'figure'),
+    [Output('clv', 'figure'),
+    Output('cpa','figure'),
+    Output('clv-cpa','figure'),
+    Output('new-customer','figure'),
+    Output('campaign-ltv','figure'),
+    Output('campaign-return','figure')],
     [Input('submit-button-state','n_clicks')],
     [State('spend-inp', 'value'), State('ctl-inp', 'value'),State('clv-inp','value')])
 def update_figure(n_clicks,spend, ctl, expected_clv):
@@ -119,15 +132,33 @@ def update_figure(n_clicks,spend, ctl, expected_clv):
     results_df['campaign_ltv']=campaign_ltv_list
     results_df['campaign_return']=np.array(campaign_ltv_list) - spend
 
-    columns=results_df[['new_customer_count', 'cpa',
-        'campaign_return', 'clv - cpa']].columns
+    # columns=results_df[['new_customer_count', 'cpa',
+    #     'campaign_return', 'clv - cpa']].columns
 
-    fig=ff.create_distplot([results_df[c] for c in columns], columns,
-                            curve_type='normal')
-
+    
+    # fig=ff.create_distplot([results_df[c] for c in columns], columns)
+    # fig = make_subplots(rows=3, cols=1)
+    # fig.add_trace(ff.create_distplot([results_df['clv']],['CLVDist']),row=1,col=1)
+    # fig.add_trace(ff.create_distplot([results_df['cpa']],['CPADist']),row=2,col=1)
     # Add title
-    fig.update_layout(title_text='CPA with Normal Distribution')
-    return fig
+    fig_clv=ff.create_distplot([results_df['clv']],['CLV'])
+    fig_clv.update_layout(title_text='Customer Life Time Value')
+    
+    fig_cpa=ff.create_distplot([results_df['cpa']],['CPA'])
+    fig_cpa.update_layout(title_text='Cost Per Acquisition')
+
+    fig_new_customer=ff.create_distplot([results_df['new_customer_count']],['new customer count'])
+    fig_new_customer.update_layout(title_text='New Customer Count')
+
+    fig_clv_cpa=ff.create_distplot([results_df['clv - cpa']],['CLV - CPA'])
+    fig_clv_cpa.update_layout(title_text='CLV - CPA')
+
+    fig_campaign_ltv=ff.create_distplot([results_df['campaign_ltv']],['Campaign LTV'])
+    fig_campaign_ltv.update_layout(title_text='Campaign LTV')
+
+    fig_campaign_return=ff.create_distplot([results_df['campaign_return']],['Campaign Return'])
+    fig_campaign_return.update_layout(title_text='Campaign Return')
+    return fig_clv, fig_cpa, fig_clv_cpa, fig_new_customer, fig_campaign_ltv, fig_campaign_return
 
 
 if __name__ == '__main__':
