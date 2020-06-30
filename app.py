@@ -182,19 +182,19 @@ def update_figure(n_clicks, spend, cpc, ctl, expected_clv):
     # fig = make_subplots(rows=3, cols=1)
     # fig.add_trace(ff.create_distplot([results_df['clv']],['CLVDist']),row=1,col=1)
     # fig.add_trace(ff.create_distplot([results_df['cpa']],['CPADist']),row=2,col=1)
-    fig_clv=ff.create_distplot([results_df['clv']],['CLV'])
+    fig_clv=ff.create_distplot([results_df['clv']],['CLV'],colors=['rgb(0, 0, 100)'])
     fig_clv.update_layout(title_text='Customer Life Time Value')
     
     fig_cpa=ff.create_distplot([results_df['cpa']],['CPA'])
     fig_cpa.update_layout(title_text='Cost Per Acquisition')
 
-    fig_new_customer=ff.create_distplot([results_df['new_customer_count']],['new customer count'])
+    fig_new_customer=ff.create_distplot([results_df['new_customer_count']],['new customer count'],colors=['rgb(0, 200, 200)'])
     fig_new_customer.update_layout(title_text='New Customer Count')
 
     fig_clv_cpa=ff.create_distplot([results_df['clv - cpa']],['CLV - CPA'])
     fig_clv_cpa.update_layout(title_text='CLV - CPA')
 
-    fig_campaign_ltv=ff.create_distplot([results_df['campaign_ltv']],['Campaign LTV'])
+    fig_campaign_ltv=ff.create_distplot([results_df['campaign_ltv']],['Campaign LTV'],colors=['magenta'])
     fig_campaign_ltv.update_layout(title_text='Campaign LTV')
 
     fig_campaign_return=ff.create_distplot([results_df['campaign_return']],['Campaign Return'])
