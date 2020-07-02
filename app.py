@@ -9,15 +9,10 @@ from dash.dependencies import Input, Output,State
 import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
 
-# 1) Define functions
-# assuming conversion rate and clv follows normal distribution
-# from the expected(avg) and stdev of it, get the realized value
-
-# assume min conver rate = 0.1%
 
 
 def get_conversion_rate(expected, stdev):
-    conversion_rate = max(expected + np.random.normal()*stdev,
+    conversion_rate = max(np.random.normal(expected,stdev),
                           0.001)
     return conversion_rate
 
@@ -25,7 +20,7 @@ def get_conversion_rate(expected, stdev):
 
 
 def get_clv(expected, stdev):
-    clv = max(expected + np.random.normal()*stdev,
+    clv = max(np.random.normal(expected,stdev),
                           1)
     return clv
 
@@ -39,60 +34,76 @@ def get_new_customer(spend, cpc, conversion_rate):
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-app.layout = html.Div([
-    html.H1(id='header-state',children='Deriv Marketing Campaign Simulation'),
-
-    html.Div(id='parameter-state',children=[
-        html.H3('''Please inter your campaing parameters for simulation.'''),
-        html.Label('Spend Amount'),
-        dcc.Input(
-            id='spend-inp',
-            type="number",
-            value=1000,
-            placeholder='Spend amount'),
-        html.Label('Cost Per Click'),
-        dcc.Input(
-            id='cpc-inp',
-            type='number',
-            value=1.75,
-            placeholder='Cost Per Click'),
-        html.Label('Click To Lead'),
-        dcc.Input(
-            id='ctl-inp',
-            type="number",
-            value=0.2,
-            placeholder='Click to lead ratio'),
-        html.Label('CLV'),
-        dcc.Input(
-            id='clv-inp',
-            type='number',
-            value=58,
-            placeholder='Expected CLV'),
-        html.Button(
-            id='submit-button-state',
-            n_clicks=0,
-            children='Simulate')]),
-
-    html.Div(id='output-state',
+app.layout = html.Div(
     children=[
-    dcc.Graph(id='clv'),
-    dcc.Graph(id='cpa'),
-    dcc.Graph(id='clv-cpa'),
-    dcc.Graph(id='new-customer'),
-    dcc.Graph(id='campaign-ltv'),
-    dcc.Graph(id='campaign-return')]),
+        html.H1(
+            id='header-state',
+            children='Deriv Marketing Campaign Simulation'),
+
+        html.Div(
+            id='parameter-state',
+            children=[
+                html.H3('''Please inter your campaing parameters for simulation.'''),
+                html.Label('Spend Amount'),
+                dcc.Input(
+                    id='spend-inp',
+                    type="number",
+                    value=1000,
+                    placeholder='Spend amount'),
+                html.Label('Cost Per Click'),
+                dcc.Input(
+                    id='cpc-inp',
+                    type='number',
+                    value=1.75,
+                     placeholder='Cost Per Click'),
+                html.Label('Click To Lead Ratio'),
+                dcc.Input(
+                    id='ctl-inp',
+                    type="number",
+                    value=0.2,
+                    placeholder='Click to lead ratio'),
+                html.Label('Lead To New Client Ratio'),
+                dcc.Input(
+                    id='ltc-inp',
+                    type="number",
+                    value=0.2,
+                    placeholder='lead to new client ratio'),
+                html.Label('Expected CLV'),
+                dcc.Input(
+                    id='clv-inp',
+                    type='number',
+                    value=58,
+                    placeholder='Expected CLV'),
+                html.Button(
+                    id='submit-button-state',
+                    n_clicks=0,
+                    children='Simulate')
+            ]),
+
+        html.Div(
+            id='output-state',
+            children=[
+                dcc.Graph(id='clv'),
+                dcc.Graph(id='cpa'),
+                dcc.Graph(id='clv-cpa'),
+                dcc.Graph(id='new-customer'),
+                dcc.Graph(id='campaign-ltv'),
+                dcc.Graph(id='campaign-return')]),
     
-    html.Div(id='summary-state',children=[
-        html.H2('Simulation Summary'),
-        html.Table([
-            html.Tr([html.Td('Expected Customer Life Time Value'), html.Td(id='summary-clv')]),
-            html.Tr([html.Td('Mean Cost Per Acquisition'), html.Td(id='summary-cpa')]),
-            html.Tr([html.Td('Mean CLV - CPA'), html.Td(id='summary-clv-cpa')]),
-            html.Tr([html.Td('Mean Number of New Customers'), html.Td(id='summary-new-customer')]),
-            html.Tr([html.Td('Mean Campaign LTV'), html.Td(id='summary-ltv')]),
-            html.Tr([html.Td('Mean Campaign Return'), html.Td(id='summary-return')])
-            ])
-    ])
+        html.Div(
+            id='summary-state',
+            children=[
+                html.H2('Simulation Summary'),
+                html.Table(
+                    children=[
+                        html.Tr([html.Td('Expected Customer Life Time Value'), html.Td(id='summary-clv')]),
+                        html.Tr([html.Td('Mean Cost Per Acquisition'), html.Td(id='summary-cpa')]),
+                        html.Tr([html.Td('Mean CLV - CPA'), html.Td(id='summary-clv-cpa')]),
+                        html.Tr([html.Td('Mean Number of New Customers'), html.Td(id='summary-new-customer')]),
+                        html.Tr([html.Td('Mean Campaign LTV'), html.Td(id='summary-ltv')]),
+                        html.Tr([html.Td('Mean Campaign Return'), html.Td(id='summary-return')],style={'text-align': 'center'})
+                    ],style={'text-align': 'center'})
+            ],style={'text-align':'center'})
 ])
 
 @app.callback(
@@ -112,21 +123,17 @@ app.layout = html.Div([
     [State('spend-inp', 'value'),
     State('cpc-inp','value'),
     State('ctl-inp', 'value'),
+    State('ltc-inp', 'value'),
     State('clv-inp','value')])
-def update_figure(n_clicks, spend, cpc, ctl, expected_clv):
-    # variable
-    # we can discussed how we define each variables here
-
-    spend=spend
-    cpc=cpc
+def update_figure(n_clicks, spend, cpc, ctl, ltc, expected_clv):
 
     # Conversion rate, depends on we look at cpc or cpm
     # here i use cpc, and hence the conversion rate is click > lead(virtual) > real , as we dont really care roi of camp for BA (which use cpm)
 
     # visitor > real signup
-    conversion_rate_expected=ctl
+    conversion_rate_expected=ctl*ltc # conversion rate is (click to lead ratio) * (lead to client ratio)
     # i will use 20% of std for now as the spreadsheet dont provide the std of india
-    conversion_rate_stdev=conversion_rate_expected * 0.2
+    conversion_rate_stdev=conversion_rate_expected * 0.1
 
     # from the spreadsheet only have clv_d14, but i would suggest to use clv_d60 as 2 months more or less represent the whole cycle of a client
     # similar approach with conversion,
