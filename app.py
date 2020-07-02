@@ -38,7 +38,7 @@ app.layout = html.Div(
     children=[
         html.H1(
             id='header-state',
-            children='Deriv Marketing Campaign Simulation'),
+            children='Deriv Marketing Campaign Simulation',style={'text=align':'center'}),
 
         html.Div(
             id='parameter-state',
@@ -74,11 +74,13 @@ app.layout = html.Div(
                     type='number',
                     value=58,
                     placeholder='Expected CLV'),
+                html.Br(),
+                html.Br(),
                 html.Button(
                     id='submit-button-state',
                     n_clicks=0,
                     children='Simulate')
-            ]),
+            ],style={'padding-left':'5%'}),
 
         html.Div(
             id='output-state',
@@ -102,7 +104,7 @@ app.layout = html.Div(
                         html.Tr([html.Td('Mean Number of New Customers'), html.Td(id='summary-new-customer')]),
                         html.Tr([html.Td('Mean Campaign LTV'), html.Td(id='summary-ltv')]),
                         html.Tr([html.Td('Mean Campaign Return'), html.Td(id='summary-return')],style={'text-align': 'center'})
-                    ],style={'text-align': 'center'})
+                    ],style={"margin-left":"auto","margin-right":"auto"})
             ],style={'text-align':'center'})
 ])
 
