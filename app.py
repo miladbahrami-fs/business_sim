@@ -42,53 +42,75 @@ app.layout = html.Div(
     children=[
         html.H1(
             id='header-state',
-            children='Deriv Marketing Campaign Simulation',style={'text=align':'center'}),
-
+            children='Deriv Marketing Campaign Simulation',style={'text-align':'center'}),
+            html.Br(),
+            html.Br(),
         html.Div(
-            id='parameter-state',
             children=[
-                html.H3('''Please enter your campaing parameters for simulation :'''),
-                html.Label('Campaign Budget'),
-                dcc.Input(
-                    id='budget-inp',
-                    type="number",
-                    value=1000,
-                    placeholder='Campaign Budget'),
-                html.Label('Cost Per Click'),
-                dcc.Input(
-                    id='cpc-inp',
-                    type='number',
-                    value=1.75,
-                     placeholder='Cost Per Click'),
-                html.Label('Click To Lead Ratio'),
-                dcc.Input(
-                    id='ctl-inp',
-                    type="number",
-                    value=0.2,
-                    placeholder='Click to lead ratio'),
-                html.Label('Lead To New Client Ratio'),
-                dcc.Input(
-                    id='ltc-inp',
-                    type="number",
-                    value=0.2,
-                    placeholder='lead to new client ratio'),
-                html.Label('Expected CLV'),
-                dcc.Input(
-                    id='clv-inp',
-                    type='number',
-                    value=58,
-                    placeholder='Expected CLV'),
-                html.Br(),
-                html.Br(),
-                html.Button(
-                    id='submit-button-state',
-                    n_clicks=0,
-                    children='Simulate')
-            ],style={'padding-left':'5%'}),
+            html.Div(
+                id='parameter-state',
+                children=[
+                    html.H3('''Please enter your campaing parameters for simulation :'''),
+                    html.Label('Campaign Budget'),
+                    dcc.Input(
+                        id='budget-inp',
+                        type="number",
+                        value=1000,
+                        placeholder='Campaign Budget'),
+                    html.Label('Cost Per Click'),
+                    dcc.Input(
+                        id='cpc-inp',
+                        type='number',
+                        value=1.75,
+                        placeholder='Cost Per Click'),
+                    html.Label('Click To Lead Ratio'),
+                    dcc.Input(
+                        id='ctl-inp',
+                        type="number",
+                        value=0.2,
+                        placeholder='Click to lead ratio'),
+                    html.Label('Lead To New Client Ratio'),
+                    dcc.Input(
+                        id='ltc-inp',
+                        type="number",
+                        value=0.2,
+                        placeholder='lead to new client ratio'),
+                    html.Label('Expected CLV'),
+                    dcc.Input(
+                        id='clv-inp',
+                        type='number',
+                        value=58,
+                        placeholder='Expected CLV'),
+                    html.Br(),
+                    html.Br(),
+                    html.Button(
+                        id='submit-button-state',
+                        n_clicks=0,
+                        children='Simulate')
+                ],style={'padding-left':'3%','width': '50%','float':'left'}),
+            html.Div(
+            id='formula-state',
+            children=[
+                html.H4('Results Using Formulas'),
+                html.Table(
+                    children=[
+                        html.Tr([html.Td('Expected Customer Life Time Value'), html.Td(id='formula-clv')]),
+                        html.Tr([html.Td('Mean Cost Per Acquisition'), html.Td(id='formula-cpa')]),
+                        html.Tr([html.Td('Mean Cost Per Lead'), html.Td(id='formula-cpl')]),
+                        html.Tr([html.Td('Mean CLV - CPA'), html.Td(id='formula-clv-cpa')]),
+                        html.Tr([html.Td('Mean Number of New Customers'), html.Td(id='formula-new-customer')]),
+                        html.Tr([html.Td('Mean Campaign LTV'), html.Td(id='formula-ltv')]),
+                        html.Tr([html.Td('Mean Campaign Return'), html.Td(id='formula-return')])
+                    ])
+            ],style={'margin-left': '60%', 'padding-top':'6%'})
+        ]),
 
         html.Div(
             id='output-state',
             children=[
+                html.Br(),
+                html.Br(),
+                html.H2('Simulation Results',style={'text-align':'center'}),
                 dcc.Graph(id='clv'),
                 dcc.Graph(id='cpa'),
                 dcc.Graph(id='cpl'),
@@ -100,7 +122,7 @@ app.layout = html.Div(
         html.Div(
             id='summary-state',
             children=[
-                html.H2('Simulation Summary'),
+                html.H2('Simulation Results Summary'),
                 html.Table(
                     children=[
                         html.Tr([html.Td('Expected Customer Life Time Value'), html.Td(id='summary-clv')]),
@@ -246,6 +268,30 @@ def update_figure(n_clicks, budget, cpc, ctl, ltc, clv):
     mean_return=round(results_df['campaign_return'].mean(),2)
     
     return fig_clv, fig_cpa, fig_cpl, fig_clv_cpa, fig_new_customer,fig_campaign_ltv, fig_campaign_return, clv_expected, mean_cpa,mean_cpl ,mean_diff, mean_new_customer, mean_ltv, mean_return
+
+@app.callback(
+    [Output('formula-clv','children'),
+    Output('formula-cpa','children'),
+    Output('formula-cpl','children'),
+    Output('formula-clv-cpa','children'),
+    Output('formula-new-customer','children'),
+    Output('formula-ltv','children'),
+    Output('formula-return','children')],
+    [Input('budget-inp', 'value'),
+    Input('cpc-inp','value'),
+    Input('ctl-inp', 'value'),
+    Input('ltc-inp', 'value'),
+    Input('clv-inp','value')])
+def calculate_results(budget, cpc, ctl, ltc, clv):
+    if not [x for x in (budget, cpc, ctl, ltc, clv) if x is None]:
+        cpl=round(safe_div(cpc,ctl),2)
+        cpa=round(safe_div(cpl,ltc),2)
+        new_clients = round(safe_div(budget,cpa),2)
+        campaign_ltv=round(clv*new_clients)
+        campaign_return = round(campaign_ltv - budget,2)
+        return clv, cpa, cpl, clv - cpa, new_clients, campaign_ltv, campaign_return
+    else:
+        return 0,0,0,0,0,0,0
 
 
 if __name__ == '__main__':
