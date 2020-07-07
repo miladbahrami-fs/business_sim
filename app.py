@@ -8,6 +8,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output,State
 import plotly.figure_factory as ff
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 def safe_div(n, d):
     return n / d if d else 0
@@ -61,12 +62,14 @@ def simulate(budget, cpc, ctl, ltc, clv):
 
     # Simulate 1000 times and look at the distributions
     new_customer_count_list=[]
+    lead_count_list=[]
     cpa_list=[]
     cpl_list=[]
     clv_list=[]
+    index=[]
     campaign_ltv_list=[]
 
-    for _ in range(1000):
+    for i in range(1000):
 
         # Run marketing campaign sim
         click_to_lead = get_conversion_rate(click_to_lead_expected,
@@ -84,8 +87,10 @@ def simulate(budget, cpc, ctl, ltc, clv):
         cpa=spend/new_customer_count
         clv=get_clv(clv_expected, clv_stdev)
         campaign_ltv=clv * new_customer_count
-
+        
+        index.append(i)
         new_customer_count_list.append(new_customer_count)
+        lead_count_list.append(leads)
         cpa_list.append(cpa)
         cpl_list.append(cpl)
         clv_list.append(clv)
@@ -94,7 +99,9 @@ def simulate(budget, cpc, ctl, ltc, clv):
 
     # Store simulation results in a dataframe
     results_df=pd.DataFrame()
+    results_df['index']=index
     results_df['new_customer_count']=new_customer_count_list
+    results_df['leads_count']= lead_count_list
     results_df['clv']=clv_list
     results_df['cpa']=cpa_list
     results_df['cpl']=cpl_list
@@ -120,7 +127,7 @@ app.layout = html.Div(
             html.Div(
                 id='parameter-state',
                 children=[
-                    html.H3('''Please enter your campaing parameters for simulation :'''),
+                    html.H3('''Please enter your campaign parameters for simulation :'''),
                     html.Label('Campaign Budget'),
                     dcc.Input(
                         id='budget-inp',
@@ -187,6 +194,7 @@ app.layout = html.Div(
                     html.Br(),
                     html.H2('Simulation Results',style={'text-align':'center'}),
                     dcc.Graph(id='clv'),
+                    dcc.Graph(id='over-time'),
                     dcc.Graph(id='cpa'),
                     dcc.Graph(id='cpl'),
                     dcc.Graph(id='clv-cpa'),
@@ -215,6 +223,7 @@ app.layout = html.Div(
 
 @app.callback(
     [Output('clv', 'figure'),
+    Output('over-time','figure'),
     Output('cpa','figure'),
     Output('cpl','figure'),
     Output('clv-cpa','figure'),
@@ -245,6 +254,11 @@ def update_figure(n_clicks, budget, cpc, ctl, ltc, clv):
     fig_clv=ff.create_distplot([results_df['clv']],['CLV'],colors=['rgb(0, 0, 100)'])
     fig_clv.update_layout(title_text='Customer Life Time Value')
     
+    df=pd.concat([results_df['new_customer_count'],results_df['leads_count'],results_df['index']],axis=1).reset_index()
+    df_melt=df.melt(id_vars='index', value_vars=['new_customer_count', 'leads_count'])
+    fig_over_time=px.line(df_melt, x='index' , y='value' , color='variable')
+    fig_over_time.update_layout(title_text='Number of New Clients and Leads over each simulation')
+    
     fig_cpa=ff.create_distplot([results_df['cpa']],['CPA'])
     fig_cpa.update_layout(title_text='Cost Per Acquisition')
 
@@ -270,7 +284,7 @@ def update_figure(n_clicks, budget, cpc, ctl, ltc, clv):
     mean_ltv=round(results_df['campaign_ltv'].mean(),2)
     mean_return=round(results_df['campaign_return'].mean(),2)
     
-    return fig_clv, fig_cpa, fig_cpl, fig_clv_cpa, fig_new_customer,fig_campaign_ltv, fig_campaign_return, clv_expected, mean_cpa,mean_cpl ,mean_diff, mean_new_customer, mean_ltv, mean_return
+    return fig_clv, fig_over_time, fig_cpa, fig_cpl, fig_clv_cpa, fig_new_customer,fig_campaign_ltv, fig_campaign_return, clv_expected, mean_cpa,mean_cpl ,mean_diff, mean_new_customer, mean_ltv, mean_return
 
 @app.callback(
     [Output('formula-clv','children'),
@@ -298,4 +312,4 @@ def calculate_results(budget, cpc, ctl, ltc, clv):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)
