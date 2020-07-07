@@ -41,26 +41,8 @@ def simulate(budget, cpc, ctl, ltc, clv):
     click_to_lead_stdev = click_to_lead_expected * 0.1
     lead_to_client_stdev = lead_to_client_expected * 0.1
     clv_expected = clv
-    # similar to conversion rate
     clv_stdev = clv_expected * 0.2
 
-    # Let's call it to get the number of new customers from our campaign
-    # click_to_lead = get_conversion_rate(click_to_lead_expected,
-    #                                     click_to_lead_stdev)
-    
-    # lead_to_client = get_conversion_rate(lead_to_client_expected,
-    #                                     lead_to_client_stdev)
-    
-    # leads = get_new_leads(spend,cpc,click_to_lead)
-    # new_customer_count = get_new_customer(leads,lead_to_client)
-    # And calculate our cost per acquisition (CPA)
-    # cpa = safe_div(spend,new_customer_count)
-    # get clv
-    # clv=get_clv(clv_expected, clv_stdev)
-    # calculate total campaign value
-    # campaign_ltv=clv * new_customer_count
-
-    # Simulate 1000 times and look at the distributions
     new_customer_count_list=[]
     lead_count_list=[]
     cpa_list=[]
@@ -256,7 +238,7 @@ def update_figure(n_clicks, budget, cpc, ctl, ltc, clv):
     
     df=pd.concat([results_df['new_customer_count'],results_df['leads_count'],results_df['index']],axis=1).reset_index()
     df_melt=df.melt(id_vars='index', value_vars=['new_customer_count', 'leads_count'])
-    fig_over_time=px.line(df_melt, x='index' , y='value' , color='variable')
+    fig_over_time=px.strip(df_melt, x='index' , y='value' , color='variable')
     fig_over_time.update_layout(title_text='Number of New Clients and Leads over each simulation')
     
     fig_cpa=ff.create_distplot([results_df['cpa']],['CPA'])
@@ -312,4 +294,4 @@ def calculate_results(budget, cpc, ctl, ltc, clv):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=False)
